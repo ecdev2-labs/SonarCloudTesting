@@ -1,0 +1,26 @@
+version: 0.2
+
+env:
+  secrets-manager:
+    SONAR_TOKEN: sonarcloud-token
+
+phases:
+  install:
+    runtime-versions:
+      java: corretto11
+    commands:
+      - echo Installing SonarScanner CLI...
+      - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
+      - unzip sonar-scanner.zip
+      - chmod +x sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner
+      - export PATH=$PATH:$(pwd)/sonar-scanner-5.0.1.3006-linux/bin
+      - export SONAR_TOKEN=$(aws secretsmanager get-secret-value --secret-id sonar-token --query SecretString --output text)
+
+      - echo "PATH is $PATH"
+      - which sonar-scanner
+
+  build:
+    commands:
+        
+      - echo Running SonarCloud analysis...
+      - sonar-scanner -Dsonar.login=$SONAR_TOKEN -Dsonar.organization=ecdev2-labs -Dsonar.projectKey=ecdev2-labs_sonar-scanning-examples -Dsonar.sources=. -Dsonar.host.url=https://sonarcloud.io
