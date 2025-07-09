@@ -1,0 +1,43 @@
+version: 0.2
+
+env:
+  secrets-manager:
+    SONAR_TOKEN: prod/sonar:sonarcloud
+    HOST: prod/sonar:HOST
+    organization: prod/sonar:organization
+    projectKey: prod/sonar:projectKey
+
+phases:
+  install:
+    runtime-versions:
+      java: corretto17
+    commands:
+      - echo Installing SonarScanner CLI...
+      - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
+      - unzip sonar-scanner.zip
+      - chmod +x sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner
+      - export PATH=$PATH:$(pwd)/sonar-scanner-5.0.1.3006-linux/bin
+      - echo "PATH is $PATH"
+      - which sonar-scanner
+
+  build:
+    commands:
+      - mvn test
+      - mvn -X sonar:sonar -Dsonar.login=$SONAR_TOKEN -Dsonar.host.url=$HOST -Dsonar.projectKey=$projectKey -Dsonar.organization=$organization
+      - echo "Waiting for SonarCloud Quality Gate result..."
+      - |
+        for i in {1..6}; do
+          STATUS=$(curl -s "https://sonarcloud.io/api/qualitygates/project_status?projectKey=$projectKey" | jq -r '.projectStatus.status')
+          echo "Attempt $i: Sonar Quality Gate Status = $STATUS"
+          if [[ "$STATUS" == "OK" || "$STATUS" == "ERROR" ]]; then
+            break
+          fi
+          sleep 10
+        done
+
+        if [ "$STATUS" != "OK" ]; then
+          echo "Quality Gate failed."
+          exit 1
+        else
+          echo "Quality Gate passed."
+        fi
