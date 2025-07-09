@@ -24,6 +24,7 @@ phases:
     commands:
       - mvn test
       - mvn -X sonar:sonar -Dsonar.login=$SONAR_TOKEN -Dsonar.host.url=$HOST -Dsonar.projectKey=$projectKey -Dsonar.organization=$organization
+
       - echo "Waiting for SonarCloud Quality Gate result..."
       - |
         for i in {1..6}; do
