@@ -28,7 +28,7 @@ phases:
       - echo "Waiting for SonarCloud Quality Gate result..."
       - |
         for i in {1..6}; do
-          STATUS=$(curl -s "https://sonarcloud.io/api/qualitygates/project_status?projectKey=$projectKey" | jq -r '.projectStatus.status')
+          STATUS=$(curl -s "https://sonarcloud.io/api/qualitygates/project_status?projectKey=SonarCloudTesting" | jq -r '.projectStatus.status')
           echo "Attempt $i: Sonar Quality Gate Status = $STATUS"
           if [[ "$STATUS" == "OK" || "$STATUS" == "ERROR" ]]; then
             break
